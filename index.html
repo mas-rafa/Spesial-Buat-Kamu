@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>A Letter for You</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Modern & Editorial Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        serif: ['"Newsreader"', 'serif'],
+                        display: ['"Italiana"', 'serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        canvas: '#141210',
+                        surface: '#1c1916',
+                        paper: '#faf7f2',
+                        paperSubtle: '#f2ece2',
+                        ink: '#211d1a',
+                        terracotta: '#b84b39',
+                        warmMuted: '#877e75',
+                        borderMuted: '#2e2824'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --envelope-w: 340px;
+            --envelope-h: 220px;
+            --flap-h: 130px;
+        }
+
+        @media (min-width: 640px) {
+            :root {
+                --envelope-w: 460px;
+                --envelope-h: 280px;
+                --flap-h: 165px;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #14110e;
+            color: #211d1a;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* Fullscreen Ambient Canvas */
+        #ambientCanvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Multi-Gradient Cinematic Ambient Mesh */
+        .ambient-mesh {
+            position: fixed;
+            inset: -15%;
+            z-index: 0;
+            pointer-events: none;
+            background: 
+                radial-gradient(circle at 50% 20%, rgba(224, 138, 98, 0.22) 0%, transparent 48%),
+                radial-gradient(circle at 15% 40%, rgba(184, 75, 57, 0.18) 0%, transparent 45%),
+                radial-gradient(circle at 85% 55%, rgba(210, 155, 110, 0.20) 0%, transparent 50%),
+                radial-gradient(circle at 35% 85%, rgba(132, 54, 45, 0.16) 0%, transparent 55%),
+                radial-gradient(circle at 75% 90%, rgba(180, 105, 80, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(40, 28, 24, 0.5) 0%, transparent 75%);
+            filter: blur(55px);
+            animation: cinematicAuraShift 20s ease-in-out infinite alternate;
+        }
+
+        /* Top Spotlight Beam Behind the Card */
+        .ambient-spotlight {
+            position: fixed;
+            top: -15vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80vw;
+            max-width: 900px;
+            height: 90vh;
+            background: radial-gradient(ellipse at center top, rgba(245, 215, 185, 0.13) 0%, rgba(220, 140, 100, 0.05) 45%, transparent 75%);
+            filter: blur(50px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Ambient Edge Vignette */
+        .ambient-vignette {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            background: radial-gradient(circle at 50% 50%, transparent 55%, rgba(12, 10, 9, 0.75) 100%);
+        }
+
+        @keyframes cinematicAuraShift {
+            0% {
+                transform: scale(1) translate(0, 0) rotate(0deg);
+                opacity: 0.85;
+            }
+            50% {
+                transform: scale(1.08) translate(-25px, 20px) rotate(1.5deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0.96) translate(25px, -20px) rotate(-1.5deg);
+                opacity: 0.9;
+            }
+        }
+
+        /* High-Craft Analog Film Grain */
+        .grain-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.042'/%3E%3C/svg%3E");
+        }
+
+        /* ================= 3D ENVELOPE RIG ================= */
+        .envelope-wrapper {
+            perspective: 1200px;
+        }
+
+        .envelope-3d-box {
+            position: relative;
+            width: var(--envelope-w);
+            height: var(--envelope-h);
+            background: #dfd5c6;
+            border-radius: 0 0 16px 16px;
+            box-shadow: 0 40px 90px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+            perspective: 1200px;
+            cursor: pointer;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .envelope-3d-box:hover {
+            transform: translateY(-5px) scale(1.015);
+        }
+
+        /* Top Triangular Flap */
+        .flap-triangle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 0;
+            border-left: calc(var(--envelope-w) / 2) solid transparent;
+            border-right: calc(var(--envelope-w) / 2) solid transparent;
+            border-top: var(--flap-h) solid #d4c8b6;
+            transform-origin: top;
+            transition: transform 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 6;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.18));
+        }
+
+        /* Pocket Front Face */
+        .pocket-face {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-left: calc(var(--envelope-w) / 2) solid #ede6dc;
+            border-right: calc(var(--envelope-w) / 2) solid #ede6dc;
+            border-bottom: calc(var(--envelope-h) * 0.58) solid #e2d9cb;
+            border-top: calc(var(--envelope-h) * 0.42) solid transparent;
+            border-radius: 0 0 16px 16px;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        /* Inner Paper Preview */
+        .inner-paper {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 88%;
+            height: 80%;
+            background: #faf7f2;
+            border-radius: 12px;
+            z-index: 3;
+            padding: 16px;
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.35s;
+        }
+
+        /* Wax Seal Button */
+        .wax-seal {
+            position: absolute;
+            top: calc(var(--flap-h) * 0.85);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 56px;
+            height: 56px;
+            background: radial-gradient(circle at 35% 35%, #a83d2a, #6c1c0f);
+            box-shadow: 0 12px 28px rgba(108, 28, 15, 0.65), inset 0 0 0 2px rgba(255,255,255,0.25);
+            border-radius: 50%;
+            z-index: 7;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+        }
+
+        @media (min-width: 640px) {
+            .wax-seal {
+                width: 64px;
+                height: 64px;
+            }
+        }
+
+        /* Opened Physics State */
+        .envelope-3d-box.is-opened .flap-triangle {
+            transform: rotateX(180deg);
+            z-index: 2;
+        }
+
+        .envelope-3d-box.is-opened .wax-seal {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.5);
+            pointer-events: none;
+        }
+
+        .envelope-3d-box.is-opened .inner-paper {
+            transform: translate(-50%, -150px);
+            z-index: 5;
+        }
+
+        /* Editorial Letter Card Layout */
+        .letter-card {
+            background-color: #faf7f2;
+            box-shadow: 
+                0 30px 90px -15px rgba(0, 0, 0, 0.85),
+                0 0 0 1px rgba(255, 255, 255, 0.08),
+                0 0 70px rgba(184, 75, 57, 0.08);
+        }
+
+        /* Tiltable Polaroid Card */
+        .polaroid-box {
+            background: #ffffff;
+            box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .polaroid-box:hover {
+            transform: translateY(-4px) rotate(0deg) scale(1.02) !important;
+            box-shadow: 0 18px 40px -10px rgba(0, 0, 0, 0.2);
+            z-index: 20;
+        }
+
+        /* Horizontal Timeline Scrollbar Hide */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Floating Click Heart Effect */
+        .floating-heart {
+            position: fixed;
+            pointer-events: none;
+            z-index: 50;
+            animation: floatAndFade 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes floatAndFade {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(0.7);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-90px) scale(1.3) rotate(15deg);
+            }
+        }
+
+        /* Equalizer Bar Animation */
+        .eq-bar {
+            width: 2px;
+            background-color: currentColor;
+            border-radius: 1px;
+            transition: height 0.15s ease;
+        }
+
+        .view-hidden {
+            display: none !important;
+            opacity: 0;
+        }
+
+        .view-shown {
+            display: flex;
+            animation: smoothSlideUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes smoothSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(28px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen relative flex flex-col justify-between p-4 sm:p-8 selection:bg-[#dfd5c6] selection:text-ink">
+
+    <!-- Ambient Lighting, Spotlight & Bokeh Layers -->
+    <div class="ambient-mesh"></div>
+    <div class="ambient-spotlight"></div>
+    <div class="ambient-vignette"></div>
+    <canvas id="ambientCanvas"></canvas>
+    <div class="grain-layer"></div>
+
+    <!-- Navigation Header Bar -->
+    <header class="w-full max-w-2xl mx-auto flex items-center justify-between py-2.5 z-20">
+        <div class="flex items-center gap-2.5">
+            <span class="w-2 h-2 rounded-full bg-terracotta animate-pulse"></span>
+            <span class="font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-zinc-400">DISPATCH / ARCHIVE EDITION</span>
+        </div>
+
+        <!-- Audio Synthesizer Control -->
+        <button id="audioToggle" onclick="toggleAudio()" class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 hover:border-white/20 text-zinc-300 transition-all text-xs active:scale-95 group shadow-lg shadow-black/20">
+            <div id="eqVisualizer" class="flex items-end gap-[2px] h-3 w-3 text-terracotta">
+                <div class="eq-bar h-1.5"></div>
+                <div class="eq-bar h-3"></div>
+                <div class="eq-bar h-1"></div>
+            </div>
+            <span id="audioStatus" class="font-mono text-[10px] tracking-wider text-zinc-400 group-hover:text-zinc-200">SOUND: OFF</span>
+        </button>
+    </header>
+
+    <!-- Center Stage -->
+    <main class="w-full max-w-2xl mx-auto my-auto relative z-10 py-6 sm:py-8">
+
+        <!-- ================= STAGE 1: 3D UNSEALING ENVELOPE ================= -->
+        <div id="envelopeStage" class="envelope-wrapper flex flex-col items-center">
+            
+            <div class="my-6 sm:my-8">
+                <div class="envelope-3d-box" id="envelopeBox" onclick="openEnvelopeSequence()">
+                    <!-- Top 3D Flap -->
+                    <div class="flap-triangle"></div>
+
+                    <!-- Inner Letter Sheet -->
+                    <div class="inner-paper flex flex-col justify-between">
+                        <div class="border-b border-black/5 pb-2 flex items-center justify-between">
+                            <span class="font-mono text-[9px] uppercase tracking-wider text-warmMuted">PRIVATE DISPATCH</span>
+                            <span class="font-mono text-[9px] text-warmMuted">CONFIDENTIAL</span>
+                        </div>
+                        <p class="font-serif italic text-lg sm:text-xl text-ink text-center leading-snug px-2">
+                            "Sebuah catatan kecil tentang hal-hal yang sering lupa aku ceritakan..."
+                        </p>
+                        <div class="border-t border-black/5 pt-1 text-right">
+                            <span class="font-mono text-[8px] text-warmMuted uppercase">BUKA SURAT &rarr;</span>
+                        </div>
+                    </div>
+
+                    <!-- Front Pocket -->
+                    <div class="pocket-face"></div>
+
+                    <!-- Wax Seal Badge -->
+                    <div class="wax-seal flex items-center justify-center text-white" title="Buka Segel">
+                        <i data-lucide="heart" class="w-5 h-5 fill-current"></i>
+                    </div>
+                </div>
+            </div>
+
+            <p class="font-mono text-[11px] text-zinc-400 mt-2 tracking-wider">
+                Ketuk segel merah untuk membuka lipatan surat
+            </p>
+        </div>
+
+        <!-- ================= STAGE 2: EXPANDED EDITORIAL LETTER ================= -->
+        <div id="letterStage" class="view-hidden flex flex-col items-center">
+            
+            <article class="letter-card w-full rounded-3xl p-6 sm:p-10 space-y-9 border border-white/40">
+                
+                <!-- Editorial Header -->
+                <div class="flex items-start justify-between border-b border-black/5 pb-6">
+                    <div class="space-y-1.5">
+                        <span class="font-mono text-[10px] uppercase tracking-widest text-warmMuted block">FOLIO 01 / FOR MY FAVORITE PERSON</span>
+                        <h1 class="font-serif text-3xl sm:text-4xl text-ink font-medium leading-tight">
+                            Terima kasih sudah memilih untuk tinggal.
+                        </h1>
+                    </div>
+
+                    <div class="text-right shrink-0">
+                        <span id="letterDateFormatted" class="font-mono text-[10px] text-warmMuted block uppercase"></span>
+                        <span class="font-mono text-[9px] text-terracotta tracking-wider uppercase block mt-0.5">READ & PRESERVED</span>
+                    </div>
+                </div>
+
+                <!-- Letter Body Narrative -->
+                <div class="space-y-4 text-sm sm:text-base leading-relaxed text-[#36312e] font-sans font-normal">
+                    <p>
+                        Mungkin aku bukan tipe yang selalu pandai merangkai kata manis setiap detik. Tapi di antara rutinitas harian yang sering kali padat dan melelahkan, keberadaanmu selalu jadi jeda yang paling menenangkan.
+                    </p>
+                    <p>
+                        Terima kasih sudah selalu sabar menemani langkahku, jadi teman cerita yang selalu hangat, dan selalu bikin hal-hal sederhana punya arti yang dalam. Bersamamu, aku belajar banyak tentang rasa cukup, tenang, dan arti saling menjaga.
+                    </p>
+                </div>
+
+                <!-- Interactive Horizontal Timeline -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex items-center justify-between text-xs font-mono text-warmMuted">
+                        <span>TIMELINE / PERJALANAN KITA</span>
+                        <span class="text-[10px]">&larr; GESER HORIZONTAL &rarr;</span>
+                    </div>
+
+                    <div id="timelineTrack" class="flex gap-3 overflow-x-auto no-scrollbar py-2 -mx-2 px-2 cursor-grab active:cursor-grabbing">
+                        <!-- Node 1 -->
+                        <div class="min-w-[210px] sm:min-w-[230px] p-4 rounded-2xl bg-[#eee7dc] border border-black/5 flex flex-col justify-between">
+                            <span class="font-mono text-[10px] text-terracotta uppercase">BABAK 01</span>
+                            <p class="font-serif italic text-lg text-ink my-2">Pertama Kali Terhubung</p>
+                            <p class="text-xs text-warmMuted leading-relaxed">Berawal dari percakapan santai yang ternyata membuka jalan untuk obrolan-obrolan panjang berikutnya.</p>
+                        </div>
+                        <!-- Node 2 -->
+                        <div class="min-w-[210px] sm:min-w-[230px] p-4 rounded-2xl bg-[#eee7dc] border border-black/5 flex flex-col justify-between">
+                            <span class="font-mono text-[10px] text-terracotta uppercase">BABAK 02</span>
+                            <p class="font-serif italic text-lg text-ink my-2">Momen-Momen Sederhana</p>
+                            <p class="text-xs text-warmMuted leading-relaxed">Keliling kota tanpa tujuan jelas, makan bareng di tempat biasa, dan tertawa lepas tanpa beban.</p>
+                        </div>
+                        <!-- Node 3 -->
+                        <div class="min-w-[210px] sm:min-w-[230px] p-4 rounded-2xl bg-[#eee7dc] border border-black/5 flex flex-col justify-between">
+                            <span class="font-mono text-[10px] text-terracotta uppercase">BABAK 03</span>
+                            <p class="font-serif italic text-lg text-ink my-2">Hari Ini & Seterusnya</p>
+                            <p class="text-xs text-warmMuted leading-relaxed">Terus saling jaga, saling dukung mimpi masing-masing, dan menikmati perjalanan berdua.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Polaroid Gallery -->
+                <div class="space-y-4 pt-2">
+                    <div class="flex items-center justify-between text-xs font-mono text-warmMuted">
+                        <span>DOKUMENTASI / MOMEN FOTO</span>
+                        <span class="text-[10px]">KLIK UNTUK MENGGANTI FOTO</span>
+                    </div>
+
+                    <input type="file" id="inputFoto0" accept="image/*" class="hidden" onchange="previewPolaroid(event, 0)">
+                    <input type="file" id="inputFoto1" accept="image/*" class="hidden" onchange="previewPolaroid(event, 1)">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Polaroid 1 -->
+                        <div onclick="document.getElementById('inputFoto0').click()" class="polaroid-box rounded-2xl p-3 cursor-pointer transform -rotate-1 group">
+                            <div class="aspect-[4/3] rounded-xl bg-[#eee7dc] overflow-hidden relative flex items-center justify-center">
+                                <img id="polaroidImg0" class="w-full h-full object-cover hidden" alt="Momen 1">
+                                <div id="polaroidPlaceholder0" class="text-center p-4 text-warmMuted">
+                                    <i data-lucide="image" class="w-6 h-6 mx-auto mb-1 text-terracotta/70 stroke-[1.5]"></i>
+                                    <span class="font-mono text-xs block text-ink">Foto Momen Favorit</span>
+                                    <span class="font-mono text-[9px] text-warmMuted block">Sentuh untuk unggah</span>
+                                </div>
+                            </div>
+                            <p class="font-serif italic text-sm text-center text-ink mt-3 font-medium">Hari-hari yang tenang</p>
+                        </div>
+
+                        <!-- Polaroid 2 -->
+                        <div onclick="document.getElementById('inputFoto1').click()" class="polaroid-box rounded-2xl p-3 cursor-pointer transform rotate-1 group">
+                            <div class="aspect-[4/3] rounded-xl bg-[#eee7dc] overflow-hidden relative flex items-center justify-center">
+                                <img id="polaroidImg1" class="w-full h-full object-cover hidden" alt="Momen 2">
+                                <div id="polaroidPlaceholder1" class="text-center p-4 text-warmMuted">
+                                    <i data-lucide="image" class="w-6 h-6 mx-auto mb-1 text-terracotta/70 stroke-[1.5]"></i>
+                                    <span class="font-mono text-xs block text-ink">Foto Senyum Terbaikmu</span>
+                                    <span class="font-mono text-[9px] text-warmMuted block">Sentuh untuk unggah</span>
+                                </div>
+                            </div>
+                            <p class="font-serif italic text-sm text-center text-ink mt-3 font-medium">Tempat terbaik untuk pulang</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Secret Scratch / Tap-to-Reveal Card -->
+                <div class="pt-2">
+                    <div onclick="revealSecretCard()" id="secretCard" class="cursor-pointer border border-dashed border-terracotta/40 rounded-2xl p-5 text-center bg-[#f4ede2] hover:bg-[#efe5d7] transition-all">
+                        <div id="secretLocked" class="flex flex-col items-center gap-1.5 text-warmMuted">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-terracotta"></i>
+                            <span class="font-mono text-xs text-ink font-medium">Pesan Rahasia Kecil</span>
+                            <span class="text-[10px] font-mono text-warmMuted">Ketuk di sini untuk membuka</span>
+                        </div>
+                        <div id="secretUnlocked" class="hidden text-center space-y-1">
+                            <p class="font-serif italic text-lg text-ink font-medium">
+                                "Aku selalu bangga sama kamu, di setiap langkah kecil yang kamu ambil."
+                            </p>
+                            <span class="font-mono text-[10px] text-terracotta uppercase">UNTUK KESAYANGANKU SELALU</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Decision Prompt -->
+                <div class="pt-6 border-t border-black/5">
+                    <div id="decisionBlock" class="space-y-5 text-center">
+                        <p class="font-serif italic text-2xl text-ink">
+                            Tetap terus bareng aku ke depannya, ya?
+                        </p>
+                        
+                        <div class="flex items-center justify-center gap-3">
+                            <button onclick="acceptLetterAction()" class="px-7 py-3 rounded-full bg-ink text-paper text-xs font-mono font-medium hover:bg-black transition-all active:scale-95 flex items-center gap-2">
+                                <span>IYA, PASTI</span>
+                                <i data-lucide="check" class="w-3.5 h-3.5 text-terracotta"></i>
+                            </button>
+                            <button onclick="discussLaterAction()" class="px-6 py-3 rounded-full border border-black/15 text-warmMuted text-xs font-mono hover:bg-black/5 transition-all active:scale-95">
+                                KITA BAHAS NANTI
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Accepted State -->
+                    <div id="acceptedBlock" class="hidden text-center py-4 space-y-2">
+                        <p class="font-serif text-2xl sm:text-3xl text-ink">
+                            Kesepakatan tersimpan rapi.
+                        </p>
+                        <p class="text-xs sm:text-sm text-warmMuted font-sans">
+                            Terima kasih banyak ya. Sampai ketemu di momen-momen seru berikutnya.
+                        </p>
+                    </div>
+                </div>
+
+            </article>
+
+        </div>
+
+    </main>
+
+    <!-- Context Footer -->
+    <footer class="w-full max-w-2xl mx-auto flex items-center justify-between py-2 border-t border-white/5 text-[10px] font-mono text-zinc-500 z-20">
+        <span>MEMORANDUM</span>
+        <span>WITH RESPECT & APPRECIATION</span>
+    </footer>
+
+    <script>
+        /* =======================================================
+           INITIALIZE SYSTEM & ICONS
+        ======================================================= */
+        lucide.createIcons();
+
+        const todayFormatted = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
+        document.getElementById('letterDateFormatted').innerText = todayFormatted;
+
+        /* =======================================================
+           WARM CINEMATIC DUST & BOKEH PARTICLES ENGINE (60 FPS)
+        ======================================================= */
+        const canvas = document.getElementById('ambientCanvas');
+        const ctx = canvas.getContext('2d');
+        let dustParticles = [];
+
+        function handleResize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        class AmbientBokehParticle {
+            constructor() {
+                this.reset(true);
+            }
+            reset(initial = false) {
+                this.x = Math.random() * canvas.width;
+                this.y = initial ? Math.random() * canvas.height : canvas.height + 20;
+                
+                // Layer logic: 0 = background tiny dust, 1 = warm foreground bokeh
+                this.isBokeh = Math.random() > 0.8;
+                if (this.isBokeh) {
+                    this.size = Math.random() * 4.5 + 2.5;
+                    this.alpha = Math.random() * 0.18 + 0.05;
+                    this.speedY = -Math.random() * 0.25 - 0.08;
+                    this.blur = 4;
+                } else {
+                    this.size = Math.random() * 1.8 + 0.6;
+                    this.alpha = Math.random() * 0.45 + 0.15;
+                    this.speedY = -Math.random() * 0.38 - 0.1;
+                    this.blur = 0;
+                }
+
+                this.speedX = (Math.random() - 0.5) * 0.3;
+                this.oscillationSpeed = Math.random() * 0.02 + 0.005;
+                this.oscillationRange = Math.random() * 1.5 + 0.5;
+                this.angle = Math.random() * Math.PI * 2;
+                this.color = Math.random() > 0.5 ? '#f5e8d8' : '#e6ab8e';
+            }
+            update() {
+                this.angle += this.oscillationSpeed;
+                this.x += this.speedX + Math.sin(this.angle) * this.oscillationRange * 0.25;
+                this.y += this.speedY;
+
+                if (this.y < -25 || this.x < -25 || this.x > canvas.width + 25) {
+                    this.reset(false);
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                if (this.blur > 0) {
+                    ctx.shadowBlur = this.blur * 2;
+                    ctx.shadowColor = '#e08a62';
+                }
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        const particleCount = Math.min(Math.floor(window.innerWidth / 16), 65);
+        for (let i = 0; i < particleCount; i++) {
+            dustParticles.push(new AmbientBokehParticle());
+        }
+
+        function runParticleLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < dustParticles.length; i++) {
+                dustParticles[i].update();
+                dustParticles[i].draw();
+            }
+            requestAnimationFrame(runParticleLoop);
+        }
+        runParticleLoop();
+
+        /* =======================================================
+           WARM RHODES CHORD & TAPE NOISE AUDIO SYNTHESIZER
+           Progression: Dmaj9 -> Bm9 -> Em9 -> A13
+        ======================================================= */
+        let audioCtx = null;
+        let isAudioPlaying = false;
+        let chordInterval = null;
+        let tapeNoiseNode = null;
+
+        const chordProgression = [
+            [293.66, 369.99, 440.00, 554.37, 659.25], // Dmaj9
+            [246.94, 293.66, 369.99, 440.00, 554.37], // Bm9
+            [164.81, 246.94, 293.66, 392.00, 493.88], // Em9
+            [220.00, 277.18, 329.63, 440.00, 493.88]  // A13
+        ];
+        let chordIndex = 0;
+
+        function startTapeNoise() {
+            if (!audioCtx || tapeNoiseNode) return;
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            let b0 = 0, b1 = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                b0 = 0.99 * b0 + white * 0.05;
+                b1 = 0.95 * b1 + white * 0.02;
+                data[i] = (b0 + b1) * 0.012;
+            }
+            tapeNoiseNode = audioCtx.createBufferSource();
+            tapeNoiseNode.buffer = buffer;
+            tapeNoiseNode.loop = true;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 680;
+
+            tapeNoiseNode.connect(filter);
+            filter.connect(audioCtx.destination);
+            tapeNoiseNode.start();
+        }
+
+        function playWarmChord(notes) {
+            if (!audioCtx || !isAudioPlaying) return;
+            const now = audioCtx.currentTime;
+
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+
+                osc.type = i === 0 ? "triangle" : "sine";
+                osc.frequency.setValueAtTime(freq, now + (i * 0.035));
+
+                filter.type = "lowpass";
+                filter.frequency.setValueAtTime(800, now);
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.035, now + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.2);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(now + (i * 0.035));
+                osc.stop(now + 3.4);
+            });
+        }
+
+        async function initAudioEngine() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+        }
+
+        function animateEqualizer(active) {
+            const bars = document.querySelectorAll('.eq-bar');
+            if (!active) {
+                bars.forEach(b => b.style.height = '4px');
+                return;
+            }
+            bars.forEach(b => {
+                b.style.height = `${Math.floor(Math.random() * 9) + 3}px`;
+            });
+        }
+
+        let eqInterval = null;
+
+        async function toggleAudio(forcePlay = false) {
+            await initAudioEngine();
+            const status = document.getElementById('audioStatus');
+
+            if (forcePlay && isAudioPlaying) return;
+
+            if (!isAudioPlaying) {
+                isAudioPlaying = true;
+                startTapeNoise();
+                status.innerText = "SOUND: ON";
+
+                playWarmChord(chordProgression[chordIndex]);
+                chordIndex = (chordIndex + 1) % chordProgression.length;
+
+                chordInterval = setInterval(() => {
+                    playWarmChord(chordProgression[chordIndex]);
+                    chordIndex = (chordIndex + 1) % chordProgression.length;
+                }, 3400);
+
+                eqInterval = setInterval(() => animateEqualizer(true), 200);
+            } else {
+                isAudioPlaying = false;
+                clearInterval(chordInterval);
+                clearInterval(eqInterval);
+                animateEqualizer(false);
+
+                if (tapeNoiseNode) {
+                    try { tapeNoiseNode.stop(); } catch(e){}
+                    tapeNoiseNode = null;
+                }
+                status.innerText = "SOUND: OFF";
+            }
+        }
+
+        /* =======================================================
+           UNSEALING PHYSICAL 3D TRANSITION
+        ======================================================= */
+        let unsealed = false;
+        function openEnvelopeSequence() {
+            if (unsealed) return;
+            unsealed = true;
+
+            toggleAudio(true);
+
+            const envBox = document.getElementById('envelopeBox');
+            const envStage = document.getElementById('envelopeStage');
+            const letterStage = document.getElementById('letterStage');
+
+            // 1. Fold 3D flap and slide sheet
+            envBox.classList.add('is-opened');
+
+            // 2. Animate out envelope and transition to letter
+            setTimeout(() => {
+                envStage.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+                envStage.style.opacity = "0";
+                envStage.style.transform = "scale(0.95) translateY(-20px)";
+
+                setTimeout(() => {
+                    envStage.classList.add('view-hidden');
+                    letterStage.classList.remove('view-hidden');
+                    letterStage.classList.add('view-shown');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 550);
+            }, 1200);
+        }
+
+        /* =======================================================
+           INTERACTIVE COMPONENT HANDLERS
+        ======================================================= */
+        function previewPolaroid(event, idx) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById(`polaroidImg${idx}`);
+                const placeholder = document.getElementById(`polaroidPlaceholder${idx}`);
+                img.src = e.target.result;
+                img.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function revealSecretCard() {
+            document.getElementById('secretLocked').classList.add('hidden');
+            document.getElementById('secretUnlocked').classList.remove('hidden');
+        }
+
+        function acceptLetterAction() {
+            confetti({
+                particleCount: 50,
+                spread: 60,
+                origin: { y: 0.8 },
+                colors: ['#b84b39', '#877e75', '#dfd5c6', '#faf7f2']
+            });
+
+            document.getElementById('decisionBlock').classList.add('hidden');
+            document.getElementById('acceptedBlock').classList.remove('hidden');
+        }
+
+        function discussLaterAction() {
+            const area = document.getElementById('decisionBlock');
+            area.innerHTML = `
+                <p class="font-serif italic text-xl text-ink">
+                    Boleh, kita bahas pelan-pelan sambil ngobrol santai ya.
+                </p>
+                <button onclick="acceptLetterAction()" class="mt-2 px-6 py-2.5 rounded-full bg-ink text-paper text-xs font-mono">
+                    SIAP
+                </button>
+            `;
+        }
+
+        /* =======================================================
+           TIMELINE TOUCH & MOUSE DRAG ENGINE
+        ======================================================= */
+        const track = document.getElementById('timelineTrack');
+        let isDown = false;
+        let startX, scrollLeft;
+
+        track.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - track.offsetLeft;
+            scrollLeft = track.scrollLeft;
+        });
+
+        track.addEventListener('mouseleave', () => isDown = false);
+        track.addEventListener('mouseup', () => isDown = false);
+
+        track.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - track.offsetLeft;
+            const walk = (x - startX) * 1.5;
+            track.scrollLeft = scrollLeft - walk;
+        });
+
+        /* =======================================================
+           GLOBAL PARTICLES SPAWN ON CLICK
+        ======================================================= */
+        window.addEventListener('click', function(e) {
+            if (e.target.closest('button') || e.target.closest('input')) return;
+            const heart = document.createElement('div');
+            heart.className = 'floating-heart text-terracotta text-sm select-none';
+            heart.innerHTML = '♥';
+            heart.style.left = `${e.clientX - 6}px`;
+            heart.style.top = `${e.clientY - 10}px`;
+            document.body.appendChild(heart);
+
+            setTimeout(() => {
+                heart.remove();
+            }, 1400);
+        });
+    </script>
+</body>
+</html>
